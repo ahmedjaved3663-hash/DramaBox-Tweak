@@ -1,51 +1,33 @@
 #import <UIKit/UIKit.h>
 
-// 1. Hook the Purchase Manager to auto-approve everything
+// 1. Intercept the Purchase Manager - This is the most important part
 %hook DBPurchaseManager
 - (BOOL)isChapterUnlocked:(id)arg1 { return YES; }
 - (void)buyChapter:(id)arg1 completion:(id)arg2 {
-    // This forces the "Buy" action to finish instantly as a success
-    typedef void (^CDUnknownBlockType)(BOOL, id);
-    CDUnknownBlockType completionBlock = (CDUnknownBlockType)arg2;
+    // This tells the app the purchase was successful immediately
+    void (^completionBlock)(BOOL, id) = arg2;
     if (completionBlock) {
         completionBlock(YES, nil);
     }
 }
 %end
 
-// 2. Hook the Video Content to remove the "Locked" status
-%hook DBVideoChapterModel
-- (BOOL)isLocked { return NO; }
-- (BOOL)isVip { return NO; }
+// 2. Force the Video Player to ignore the "Locked" status
+%hook DBChapterModel
+- (BOOL)isUnlocked { return YES; }
+- (BOOL)hasPaid { return YES; }
+- (BOOL)isFree { return YES; }
 - (NSInteger)price { return 0; }
 %end
 
-// 3. Keep the User Status for the UI
+// 3. Keep the UI looking correct
 %hook DBUserModel
 - (BOOL)isVip { return YES; }
 - (NSInteger)coins { return 99999; }
+- (BOOL)isPremium { return YES; }
 %end
 
 %ctor {
     %init;
-    
-    // Success Alert
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        UIWindow *window = nil;
-        if (@available(iOS 13.0, *)) {
-            for (UIWindowScene *scene in [UIApplication sharedApplication].connectedScenes) {
-                if (scene.activationState == UISceneActivationStateForegroundActive) {
-                    window = scene.windows.firstObject;
-                    break;
-                }
-            }
-        }
-        if (window) {
-            UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Mod Active" 
-                message:@"Transaction Bypass Enabled!" 
-                preferredStyle:UIAlertControllerStyleAlert];
-            [alert addAction:[UIAlertAction actionWithTitle:@"Play" style:UIAlertActionStyleDefault handler:nil]];
-            [window.rootViewController presentViewController:alert animated:YES completion:nil];
-        }
-    });
+    // Removed the alert to prevent interference with video loading
 }
