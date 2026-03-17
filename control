@@ -1,0 +1,5 @@
+Package: com.yourname.dramaboxunlock
+Name: DramaBoxUnlock
+Version: 1.0
+Architecture: iphoneos-arm64
+Description: VIP Unlock for DramaBox
