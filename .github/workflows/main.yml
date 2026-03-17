@@ -1,0 +1,35 @@
+name: Build DramaBox Tweak
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Theos
+        uses: Randomblock1/theos-action@v1
+        with:
+          theos-sdks: 'https://github.com/theos/sdks'
+
+      - name: Install Jailed Module
+        run: |
+          # Create the folder if it doesn't exist and force clone
+          mkdir -p $GITHUB_WORKSPACE/theos/templates/jailed
+          git clone --recursive https://github.com/kabiroberai/jailed.git $GITHUB_WORKSPACE/theos/templates/jailed/
+          
+      - name: Build Dylib
+        run: |
+          export THEOS=$GITHUB_WORKSPACE/theos
+          export PATH=$THEOS/bin:$PATH
+          export THEOS_PACKAGE_SCHEME=jailed
+          
+          # Force build
+          make package FINALPACKAGE=1
+          
+      - name: Upload Result
+        uses: actions/upload-artifact@v4
+        with:
+          name: DramaBox-Unlocked-Dylib
+          path: .theos/obj/DramaBoxUnlock.dylib
