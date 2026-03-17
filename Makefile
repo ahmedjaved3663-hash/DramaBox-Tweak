@@ -1,6 +1,3 @@
-# Add this line at the very top
-THEOS_PACKAGE_SCHEME = jailed
-
 TARGET := iphone:clang:latest:15.0
 ARCHS = arm64
 
