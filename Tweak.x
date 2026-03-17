@@ -1,33 +1,36 @@
 #import <UIKit/UIKit.h>
 
-// 1. Force User to look like a paying subscriber
-%hook DBUserModel
-- (BOOL)isVip { return YES; }
-- (BOOL)isPremium { return YES; }
-- (NSInteger)coins { return 5555; }
-- (BOOL)isSubscriptionActive { return YES; }
+// 1. Hook the Global Config - This is the "Master Switch"
+%hook DBConfigModel
+- (BOOL)isReview { return YES; } // Makes the app think it's in 'Review Mode' (often unlocks everything)
+- (BOOL)isHideVip { return NO; }
 %end
 
-// 2. Force the Episode Manager to see everything as "Already Bought"
-%hook DBChapterModel
-- (BOOL)isUnlocked { return YES; }
-- (BOOL)canWatch { return YES; }
-- (BOOL)isFree { return YES; }
-- (BOOL)hasPaid { return YES; } // This tells the server-check to skip
-- (NSInteger)unlockType { return 0; } // 0 = Already Unlocked
+// 2. Hook the Pay Manager - This stops the "Buy" popup from triggering
+%hook DBPayManager
+- (BOOL)isEpisodeUnlocked:(id)arg1 { return YES; }
+- (void)checkEpisodeStatus:(id)arg1 completion:(id)arg2 {
+    // This forces the "Check" to always return 'Success'
+    typedef void (^CDUnknownBlockType)(BOOL, id);
+    CDUnknownBlockType completionBlock = (CDUnknownBlockType)arg2;
+    if (completionBlock) {
+        completionBlock(YES, nil);
+    }
+}
 %end
 
-// 3. Force the Pay-Wall to stay hidden
-%hook DBVideoPlayerController
-- (BOOL)shouldShowPayWall { return NO; }
-- (void)setShouldShowPayWall:(BOOL)arg1 { %orig(NO); }
-%end
-
-// 4. Force the "Is Playable" check to always return YES
+// 3. Hook the Video Model - Specifically for v5.4.0
 %hook DBVideoModel
 - (BOOL)isLocked { return NO; }
-- (BOOL)isVipOnly { return NO; }
-- (BOOL)isPayVideo { return NO; }
+- (BOOL)isLimit { return NO; }
+- (NSInteger)limitType { return 0; }
+- (BOOL)canPlay { return YES; }
+%end
+
+// 4. Hook the User for Coins/VIP (Simplified)
+%hook DBUserModel
+- (BOOL)isVip { return YES; }
+- (NSInteger)coins { return 9999; }
 %end
 
 %ctor {
