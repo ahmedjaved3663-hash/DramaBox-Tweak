@@ -1,28 +1,31 @@
 #import <UIKit/UIKit.h>
 
-// 1. User Status: Tells the app you have a paid subscription
+// 1. Force the User into a "Paid" state
 %hook DBUserModel
 - (BOOL)isVip { return YES; }
 - (BOOL)isPremium { return YES; }
-- (NSInteger)coins { return 8888; } // Use a lower, safer number
+- (NSInteger)coins { return 5000; }
 - (BOOL)isSubscriptionActive { return YES; }
-- (NSInteger)vipLevel { return 10; }
 %end
 
-// 2. Episode Logic: Tells the app the video is free and unlocked
+// 2. Force the Episode to think it is already bought
 %hook DBChapterModel
 - (BOOL)isUnlocked { return YES; }
 - (BOOL)canWatch { return YES; }
 - (BOOL)isFree { return YES; }
-- (BOOL)hasPaid { return YES; }
-- (NSInteger)unlockType { return 0; } // 0 usually means 'Free' or 'Already Unlocked'
+- (NSInteger)unlockType { return 0; } // 0 = Free
 - (NSInteger)price { return 0; }
 %end
 
-// 3. Ad Manager: Block ads that might trigger when you play a video
-%hook DBAdManager
-- (BOOL)shouldShowAd { return NO; }
-- (void)showRewardVideoAd:(id)arg1 { return; }
+// 3. The "Deep Hook": Target the Player directly
+%hook DBVideoPlayerModel
+- (BOOL)isTrial { return NO; } // Disables the "Trial only" mode
+- (BOOL)needsUnlock { return NO; }
+- (void)setNeedsUnlock:(BOOL)arg1 { %orig(NO); }
+%end
+
+%hook DBVideoDetailModel
+- (BOOL)isVipVideo { return NO; } // Tells the player this isn't a restricted video
 %end
 
 %ctor {
