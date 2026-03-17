@@ -1,31 +1,32 @@
 #import <UIKit/UIKit.h>
 
-// 1. Force the User into a "Paid" state
+// 1. Force User Status
 %hook DBUserModel
 - (BOOL)isVip { return YES; }
 - (BOOL)isPremium { return YES; }
-- (NSInteger)coins { return 5000; }
+- (NSInteger)coins { return 5555; }
 - (BOOL)isSubscriptionActive { return YES; }
 %end
 
-// 2. Force the Episode to think it is already bought
+// 2. Force Episode/Chapter to be 'Purchased'
 %hook DBChapterModel
 - (BOOL)isUnlocked { return YES; }
 - (BOOL)canWatch { return YES; }
 - (BOOL)isFree { return YES; }
-- (NSInteger)unlockType { return 0; } // 0 = Free
-- (NSInteger)price { return 0; }
+- (BOOL)hasPaid { return YES; }
+- (NSInteger)unlockType { return 0; }
 %end
 
-// 3. The "Deep Hook": Target the Player directly
-%hook DBVideoPlayerModel
-- (BOOL)isTrial { return NO; } // Disables the "Trial only" mode
-- (BOOL)needsUnlock { return NO; }
-- (void)setNeedsUnlock:(BOOL)arg1 { %orig(NO); }
+// 3. SERVER BYPASS: This forces the server's 'is_locked' response to be false
+%hook DBVideoModel
+- (BOOL)isLocked { return NO; }
+- (BOOL)isVipOnly { return NO; }
 %end
 
-%hook DBVideoDetailModel
-- (BOOL)isVipVideo { return NO; } // Tells the player this isn't a restricted video
+// 4. PLAYER BYPASS: Tells the player the video is authorized
+%hook DBVideoPlayerController
+- (BOOL)shouldShowPayWall { return NO; }
+- (BOOL)isPlayable { return YES; }
 %end
 
 %ctor {
