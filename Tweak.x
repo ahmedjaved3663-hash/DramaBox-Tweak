@@ -1,33 +1,34 @@
 #import <UIKit/UIKit.h>
 
-// 1. Force the Video Detail to think it is authorized
-%hook DBVideoDetailModel
-- (BOOL)isCanPlay { return YES; }
-- (BOOL)isVipVideo { return NO; }
-- (BOOL)isUnlock { return YES; }
-%end
-
-// 2. Force the Player to skip the "Check"
-%hook DBVideoPlayerController
-- (BOOL)shouldShowPayWall { return NO; }
-- (void)setShouldShowPayWall:(BOOL)arg1 { %orig(NO); }
-- (BOOL)isTrial { return NO; }
-%end
-
-// 3. Fake a successful Purchase result globally
+// 1. Force the Purchase Manager to "finish" every transaction instantly
 %hook DBPurchaseManager
 - (BOOL)isChapterUnlocked:(id)arg1 { return YES; }
-- (void)checkChapterStatus:(id)arg1 completion:(void (^)(BOOL unlocked, id error))completion {
-    if (completion) {
-        completion(YES, nil);
+
+// This targets the specific callback method used in v5.4.0
+- (void)buyChapter:(id)arg1 completion:(id)completion {
+    // We define the block structure the app expects (success bool, error object)
+    void (^completionBlock)(BOOL success, id error) = completion;
+    if (completionBlock) {
+        // We tell the app: Success = YES, Error = nil
+        completionBlock(YES, nil);
     }
 }
 %end
 
-// 4. Set UI Balance for visual confirmation
+// 2. Remove the "Locked" status from the Video Model
+%hook DBChapterModel
+- (BOOL)isUnlocked { return YES; }
+- (BOOL)hasPaid { return YES; }
+- (BOOL)isFree { return YES; }
+- (NSInteger)unlockType { return 0; }
+%end
+
+// 3. Keep the User UI showing High Coins and VIP status
 %hook DBUserModel
-- (NSInteger)coins { return 88888; }
 - (BOOL)isVip { return YES; }
+- (BOOL)isPremium { return YES; }
+- (NSInteger)coins { return 88888; }
+- (BOOL)vipLevel { return 10; }
 %end
 
 %ctor {
