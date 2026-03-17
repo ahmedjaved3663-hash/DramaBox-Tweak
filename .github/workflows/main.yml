@@ -17,12 +17,11 @@ jobs:
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           export PATH=$THEOS/bin:$PATH
-          # We use 'make' instead of 'make package' to avoid the filter error
+          # Compiling the dylib
           make FINALPACKAGE=1
           
-     - name: Upload Result
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
           name: DramaBox-Unlocked-Dylib
-          # This updated path points to where your file actually is
           path: .theos/obj/debug/DramaBoxUnlock.dylib
