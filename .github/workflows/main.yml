@@ -13,19 +13,11 @@ jobs:
         with:
           theos-sdks: 'https://github.com/theos/sdks'
 
-      - name: Install Jailed Module
-        run: |
-          # Create the folder if it doesn't exist and force clone
-          mkdir -p $GITHUB_WORKSPACE/theos/templates/jailed
-          git clone --recursive https://github.com/kabiroberai/jailed.git $GITHUB_WORKSPACE/theos/templates/jailed/
-          
       - name: Build Dylib
         run: |
           export THEOS=$GITHUB_WORKSPACE/theos
           export PATH=$THEOS/bin:$PATH
-          export THEOS_PACKAGE_SCHEME=jailed
-          
-          # Force build
+          # We are building a standard dylib for injection
           make package FINALPACKAGE=1
           
       - name: Upload Result
