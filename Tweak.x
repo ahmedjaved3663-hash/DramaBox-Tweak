@@ -1,27 +1,39 @@
 #import <UIKit/UIKit.h>
 
-// 1. Hooking generic functions that 99% of Drama apps use
-%hookf(BOOL, is_unlock, id self) { return YES; }
-%hookf(BOOL, is_vip, id self) { return YES; }
-%hookf(NSInteger, coin_price, id self) { return 0; }
+// This tells the compiler these classes exist so it doesn't error out
+@class STUserCenter;
+@class STChapterModel;
+@class STPayViewController;
 
-// 2. The "Nuclear" Popup Killer
-// This will force ANY window with "Pay" or "Sub" in its name to close
-%hook UIViewController
-- (void)viewDidAppear:(BOOL)animated {
+// 1. Hook the User Center to force VIP status
+%hook STUserCenter
+- (BOOL)isVip { return YES; }
+- (BOOL)is_vip { return YES; }
+%end
+
+// 2. Hook the Chapter Model to unlock episodes
+%hook STChapterModel
+- (BOOL)is_unlock { return YES; }
+- (BOOL)is_free { return YES; }
+- (NSInteger)coin_price { return 0; }
+- (NSInteger)price { return 0; }
+%end
+
+// 3. Kill the Pay Wall from your screenshot (IMG_0168)
+%hook STPayViewController
+- (void)viewDidLoad {
     %orig;
-    NSString *name = NSStringFromClass([self class]);
-    if ([name containsString:@"Pay"] || 
-        [name containsString:@"Sub"] || 
-        [name containsString:@"Purchase"]) {
-        [self dismissViewControllerAnimated:NO completion:nil];
-    }
+    [self dismissViewControllerAnimated:NO completion:nil];
 }
 %end
 
-// 3. Force Video Player to "Ready" state
-%hook AVPlayer
-- (void)play {
+// 4. Global "Safety" Hook for any hidden classes
+%hook UIViewController
+- (void)viewDidAppear:(BOOL)animated {
     %orig;
+    NSString *className = NSStringFromClass([self class]);
+    if ([className containsString:@"Pay"] || [className containsString:@"Subscribe"]) {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
 }
 %end
