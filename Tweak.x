@@ -1,7 +1,6 @@
 #import <UIKit/UIKit.h>
 
-// 1. Force the Episode itself to be "Free" and "Unlocked"
-// This covers ST (Story), DB (DramaBox), and AD (Ads) prefixes
+// 1. Hooking every possible 'Chapter' model prefix
 %hook STChapterModel
 - (BOOL)is_unlock { return YES; }
 - (BOOL)is_free { return YES; }
@@ -20,7 +19,22 @@
 - (NSInteger)coin_price { return 0; }
 %end
 
-// 2. Hide the Subscription/Payment screen if it pops up
+%hook GBChapterModel
+- (BOOL)is_unlock { return YES; }
+- (BOOL)is_free { return YES; }
+%end
+
+// 2. Force the Subscription to be "Active"
+%hook STUserCenter
+- (BOOL)isVip { return YES; }
+- (BOOL)is_vip { return YES; }
+%end
+
+%hook DBUserModel
+- (BOOL)is_vip { return YES; }
+%end
+
+// 3. Kill any popup that says "Subscribe" or "Pay"
 %hook UIViewController
 - (void)viewWillAppear:(BOOL)animated {
     %orig;
