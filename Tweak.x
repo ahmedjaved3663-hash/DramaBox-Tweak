@@ -1,39 +1,34 @@
 #import <UIKit/UIKit.h>
 
-// --- USER WALLET HOOKS ---
-// We target multiple prefixes to ensure we hit the 3.1.4 names
-%hook DBUserModel
-- (NSInteger)remaining_coins { return 999999; }
-- (BOOL)is_vip { return YES; }
-%end
-
-%hook STUserModel
-- (NSInteger)remaining_coins { return 999999; }
-- (BOOL)is_vip { return YES; }
-%end
-
-%hook SDUserModel
-- (NSInteger)coins { return 999999; }
+// 1. Force the Subscription to always be "Active" locally
+%hook STUserCenter
 - (BOOL)isVip { return YES; }
+- (BOOL)is_vip { return YES; }
+- (NSString *)vip_expire_time { return @"2099-12-31"; }
 %end
 
-// --- EPISODE UNLOCK HOOKS ---
-// This is what makes the videos playable
-%hook DBChapterModel
-- (BOOL)is_unlock { return YES; }
-- (BOOL)is_free { return YES; }
-- (NSInteger)coin_price { return 0; }
+// 2. Kill the "Expired" Popup logic
+%hook STSubscriptionManager
+- (BOOL)isExpired { return NO; }
+- (BOOL)checkSubscriptionStatus { return YES; }
 %end
 
+// 3. Force the Episode to be "Unlocked" (APK Logic)
 %hook STChapterModel
 - (BOOL)is_unlock { return YES; }
 - (BOOL)is_free { return YES; }
 - (NSInteger)coin_price { return 0; }
 %end
 
+// 4. Prevent the "Subscribe Now" screen from showing
+%hook STPayViewController
+- (void)show { return; }
+- (void)viewDidLoad { %orig; [self dismissViewControllerAnimated:NO completion:nil]; }
+%end
+
 %ctor {
-    // Wait for the app to finish its initial connection
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    // Wait 4 seconds for the "Expired" check to finish, then we overwrite it
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         %init;
     });
 }
